@@ -306,6 +306,7 @@ if (empty($reshook)) {
 		// avec info diverses + qte a livrer
 
 		if ($object->origin == "supplierorder") {
+			$object->origin = "order_supplier";
 			$classname = 'CommandeFournisseur';
 		} else {
 			$classname = ucfirst($object->origin);
@@ -439,6 +440,7 @@ if (empty($reshook)) {
 				} else {
 					// Define output language
 					if (!getDolGlobalString('MAIN_DISABLE_PDF_AUTOUPDATE')) {
+						$object->fetch_thirdparty();
 						$outputlangs = $langs;
 						$newlang = '';
 						if (getDolGlobalInt('MAIN_MULTILANGS') && empty($newlang) && GETPOST('lang_id', 'aZ09')) {
@@ -452,7 +454,7 @@ if (empty($reshook)) {
 							$outputlangs->setDefaultLang($newlang);
 						}
 						$model = $object->model_pdf;
-						$ret = $object->fetch($id); // Reload to get new records
+						$ret = $object->fetch($object->id); // Reload to get new records
 
 						$result = $object->generateDocument($model, $outputlangs, $hidedetails, $hidedesc, $hideref);
 						if ($result < 0) {
