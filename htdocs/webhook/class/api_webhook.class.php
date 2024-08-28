@@ -413,4 +413,53 @@ class Webhook extends DolibarrApi
 
 		return $this->_cleanObjectDatas($this->target);
 	}
+
+	// Backport of upstream DolibarrApi missing function
+	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.PublicUnderscore
+	/**
+	 * Filter properties that will be returned on object
+	 *
+	 * @param   Object  $object			Object to clean
+	 * @param   String  $properties		Comma separated list of properties names
+	 * @return	Object					Object with cleaned properties
+	 */
+	protected function _filterObjectProperties($object, $properties)
+	{
+		// phpcs:enable
+		// If properties is empty, we return all properties
+		if (empty($properties)) {
+			return $object;
+		}
+
+		// Copy of exploded array for efficiency
+		$arr_properties = explode(',', $properties);
+		$magic_properties = array();
+		$real_properties = get_object_vars($object);
+
+		// Unsetting real properties may unset magic properties.
+		// We keep a copy of the requested magic properties
+		foreach ($arr_properties as $key) {
+			if (!array_key_exists($key, $real_properties)) {
+				// Not a real property,
+				// check if $key is a magic property (we want to keep '$obj->$key')
+				if (property_exists($object, $key) && isset($object->$key)) {
+					$magic_properties[$key] = $object->$key;
+				}
+			}
+		}
+
+		// Filter real properties (may indirectly unset magic properties)
+		foreach (get_object_vars($object) as $key => $value) {
+			if (!in_array($key, $arr_properties)) {
+				unset($object->$key);
+			}
+		}
+
+		// Restore the magic properties
+		foreach ($magic_properties as $key => $value) {
+			$object->$key = $value;
+		}
+
+		return $object;
+	}
 }
