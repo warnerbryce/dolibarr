@@ -472,7 +472,7 @@ class InterfaceWorkflowManager extends DolibarrTriggers
 					if (!is_array($list) || empty($list)) {
 						continue;
 					}
-						$number_contracts_found = count($list);
+					$number_contracts_found = count($list);
 					if ($number_contracts_found == 0) {
 						continue;
 					}
