@@ -279,6 +279,9 @@ if ($action == 'order' && GETPOST('valid')) {
 			} else {
 				$order->socid = $suppliersid[$i];
 				$order->fetch_thirdparty();
+				// BEGIN EASYA urgent change
+				$order->multicurrency_code = $order->thirdparty->multicurrency_code;
+				// END EASYA urgent change
 
 				// Trick to know which orders have been generated using the replenishment feature
 				$order->source = $order::SOURCE_ID_REPLENISHMENT;
