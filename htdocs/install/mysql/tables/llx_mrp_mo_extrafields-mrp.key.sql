@@ -1,5 +1,4 @@
--- ===================================================================
--- Copyright (C) 2016 Laurent Destailleur <eldy@users.sourceforge.net>
+-- Copyright (C) 2019 Alicealalalamdskfldmjgdfgdfhfghgfh Adminson <testldr9@dolicloud.com>
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -12,10 +11,9 @@
 -- GNU General Public License for more details.
 --
 -- You should have received a copy of the GNU General Public License
--- along with this program. If not, see <https://www.gnu.org/licenses/>.
---
--- ===================================================================
+-- along with this program. If not, see http://www.gnu.org/licenses/.
 
 
-ALTER TABLE llx_product_lot_extrafields ADD UNIQUE INDEX uk_product_lot_extrafields (fk_object);
-
+-- BEGIN MODULEBUILDER INDEXES
+ALTER TABLE llx_mrp_mo_extrafields ADD UNIQUE INDEX uk_mrp_mo_fk_object (fk_object);
+-- END MODULEBUILDER INDEXES
