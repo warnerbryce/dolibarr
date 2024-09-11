@@ -599,3 +599,7 @@ UPDATE llx_rights_def SET perms = 'thirdparty_paymentinformation' WHERE perms = 
 
 -- Fix against empty modules page
 UPDATE llx_const SET value = '' WHERE name LIKE 'MAIN_MODULE_SETUP_ON_LIST_BY_DEFAULT' AND value NOT IN ('common', 'commonkanban');
+
+-- Update website type
+UPDATE llx_societe_account SET site = 'dolibarr_website' WHERE fk_website > 0 AND site IS NULL;
+ALTER TABLE llx_societe_account MODIFY COLUMN site varchar(128) NOT NULL;
