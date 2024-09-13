@@ -1008,7 +1008,7 @@ if (empty($reshook)) {
 			}
 
 			$info_bits = 0;
-			if ($tva_npr) {
+			if (!empty($tva_npr)) {
 				$info_bits |= 0x01;
 			}
 
