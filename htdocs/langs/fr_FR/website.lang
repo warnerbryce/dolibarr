@@ -357,3 +357,4 @@ subtract=Soustraire
 LoginCheckout=Connectez-vous et procédez au paiement
 paymentSuccessProcessed=Votre paiement a été traité avec succès.
 youWillBeRedirectedToOrderPage=Vous serez rapidement redirigé vers la page de détails commande.
+WebPortalSetupNotComplete=La configuration du module "Portail Web" est incomplète
