@@ -69,10 +69,10 @@ if (GETPOST('btn_view_ticket_list')) {
 	unset($_SESSION['track_id_customer']);
 	unset($_SESSION['email_customer']);
 }
-if (isset($_SESSION['track_id_customer'])) {
+if (empty($track_id) && isset($_SESSION['track_id_customer'])) {
 	$track_id = $_SESSION['track_id_customer'];
 }
-if (isset($_SESSION['email_customer'])) {
+if (empty($email) && isset($_SESSION['email_customer'])) {
 	$email = strtolower($_SESSION['email_customer']);
 }
 
