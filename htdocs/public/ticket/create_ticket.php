@@ -210,17 +210,17 @@ if (empty($reshook)) {
 
 		if (!GETPOST("type_code", "alpha")) {
 			$error++;
-			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("Subject")));
+			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("TicketTypeRequest")));
 			$action = '';
 		}
-		if (!GETPOST("subject", "restricthtml")) {
+		if (!GETPOST("category_code", "alpha")) {
 			$error++;
-			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("Subject")));
+			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("TicketCategory")));
 			$action = '';
 		}
-		if (!GETPOST("subject", "restricthtml")) {
+		if (!GETPOST("severity_code", "alpha ")) {
 			$error++;
-			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("Subject")));
+			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("TicketSeverity")));
 			$action = '';
 		}
 		if (!GETPOST("subject", "restricthtml")) {
