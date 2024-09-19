@@ -208,6 +208,21 @@ if (empty($reshook)) {
 			}
 		}
 
+		if (!GETPOST("type_code", "alpha")) {
+			$error++;
+			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("Subject")));
+			$action = '';
+		}
+		if (!GETPOST("subject", "restricthtml")) {
+			$error++;
+			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("Subject")));
+			$action = '';
+		}
+		if (!GETPOST("subject", "restricthtml")) {
+			$error++;
+			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("Subject")));
+			$action = '';
+		}
 		if (!GETPOST("subject", "restricthtml")) {
 			$error++;
 			array_push($object->errors, $langs->trans("ErrorFieldRequired", $langs->transnoentities("Subject")));
