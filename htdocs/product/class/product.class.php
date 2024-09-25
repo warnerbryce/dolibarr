@@ -1313,7 +1313,6 @@ class Product extends CommonObject
 				// Multilangs
 				if (getDolGlobalInt('MAIN_MULTILANGS')) {
 					if ($this->setMultiLangs($user) < 0) {
-						$this->error = $langs->trans("Error")." : ".$this->db->error()." - ".$sql;
 						return -2;
 					}
 				}
@@ -6152,6 +6151,15 @@ class Product extends CommonObject
 		return ($this->type == Product::TYPE_SERVICE ? true : false);
 	}
 
+	/**
+	 * Return if the object is managed in stock.
+	 *
+	 * @return boolean     True if the object is managed in stock, false otherwise.
+	 */
+	public function isStockManaged()
+	{
+		return ($this->isProduct() || getDolGlobalString('STOCK_SUPPORTS_SERVICES'));
+	}
 
 	/**
 	 * Return if  object have a constraint on mandatory_period
