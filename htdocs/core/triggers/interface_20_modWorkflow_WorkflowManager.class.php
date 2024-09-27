@@ -473,9 +473,6 @@ class InterfaceWorkflowManager extends DolibarrTriggers
 						continue;
 					}
 					$number_contracts_found = count($list);
-					if ($number_contracts_found == 0) {
-						continue;
-					}
 
 					foreach ($list as $linked_contract) {
 						$object->setContract($linked_contract->id);
