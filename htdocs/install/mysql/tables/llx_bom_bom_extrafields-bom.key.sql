@@ -1,5 +1,5 @@
 -- ===================================================================
--- Copyright (C) 2016 Laurent Destailleur <eldy@users.sourceforge.net>
+-- Copyright (C) 2014 Florian Henry	<florian.henry@open-concept.pro>
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -17,5 +17,4 @@
 -- ===================================================================
 
 
-ALTER TABLE llx_product_lot_extrafields ADD UNIQUE INDEX uk_product_lot_extrafields (fk_object);
-
+ALTER TABLE llx_bom_bom_extrafields ADD UNIQUE INDEX uk_bom_bom_extrafields_fk_object (fk_object);

@@ -21,9 +21,9 @@
  */
 
 /**
- *      \file       htdocs/admin/mrp_extrafields.php
+ *      \file       htdocs/admin/mrp_production_extrafields.php
  *		\ingroup    mrp
- *		\brief      Page to setup extra fields of MOs
+ *		\brief      Page to setup extra fields of MOs lines
  */
 
 // Load Dolibarr environment
@@ -42,7 +42,7 @@ $type2label = ExtraFields::getListOfTypesLabels();
 
 $action = GETPOST('action', 'aZ09');
 $attrname = GETPOST('attrname', 'alpha');
-$elementtype = 'mrp_mo';
+$elementtype = 'mrp_production';
 
 if (!$user->admin) {
 	accessforbidden();
@@ -63,7 +63,8 @@ require DOL_DOCUMENT_ROOT.'/core/actions_extrafields.inc.php';
 
 $textobject = $langs->transnoentitiesnoconv('ManufacturingOrder');
 
-llxHeader('', $langs->trans("MrpSetupPage"), $help_url, '', 0, 0, '', '', '', 'mod-admin page-mrp_extrafields');
+$help_url = '';
+llxHeader('', $langs->trans("MrpSetupPage"), $help_url, '', 0, 0, '', '', '', 'mod-admin page-mrp_production_extrafields');
 
 
 $linkback = '<a href="'.DOL_URL_ROOT.'/admin/modules.php?restore_lastsearch_values=1">'.$langs->trans("BackToModuleList").'</a>';
@@ -72,12 +73,18 @@ print load_fiche_titre($langs->trans("MrpSetupPage"), $linkback, 'title_setup');
 
 $head = mrpAdminPrepareHead();
 
-print dol_get_fiche_head($head, 'mrp_extrafields', $langs->trans("ExtraFields"), -1, 'account');
+print dol_get_fiche_head($head, 'mrp_production_extrafields', $langs->trans("ExtraFields"), -1, 'account');
 
 require DOL_DOCUMENT_ROOT.'/core/tpl/admin_extrafields_view.tpl.php';
 
 print dol_get_fiche_end();
 
+// Buttons
+if ($action != 'create' && $action != 'edit') {
+	print '<div class="tabsAction">';
+	print '<a class="butAction reposition" href="' . $_SERVER["PHP_SELF"] . '?action=create">' . $langs->trans("NewAttribute") . '</a>';
+	print "</div>";
+}
 
 /*
  * Creation of an optional field
