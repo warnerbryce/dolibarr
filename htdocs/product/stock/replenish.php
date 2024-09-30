@@ -199,6 +199,7 @@ if ($action == 'order' && GETPOST('valid')) {
 						$line->tva_tx = $productsupplier->vatrate_supplier;
 						$tva = $line->tva_tx / 100;
 
+						// BEGIN EASYA urgent change
 						// If we use multicurrency
 						if (isModEnabled('multicurrency') && !empty($productsupplier->fourn_multicurrency_code) && $productsupplier->fourn_multicurrency_code != $conf->currency) {
 							$line->multicurrency_code 		= $productsupplier->fourn_multicurrency_code;
@@ -208,6 +209,8 @@ if ($action == 'order' && GETPOST('valid')) {
 							$line->multicurrency_total_tva	= $line->multicurrency_total_ht * $tva;
 							$line->multicurrency_total_ttc	= $line->multicurrency_total_ht + $line->multicurrency_total_tva;
 						}
+						// END EASYA urgent change
+
 						$line->subprice = $productsupplier->fourn_pu;
 						$line->total_ht = $productsupplier->fourn_pu * $qty;
 						$line->total_tva = $line->total_ht * $tva;
