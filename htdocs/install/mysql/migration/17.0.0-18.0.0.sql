@@ -633,3 +633,4 @@ UPDATE llx_mrp_production SET disable_stock_change = 0 WHERE disable_stock_chang
 
 -- ADD fk_soc_rib in prelevement
 ALTER TABLE llx_prelevement_demande ADD COLUMN fk_soc_rib integer DEFAULT NULL;
+ALTER TABLE llx_prelevement_lignes ADD COLUMN fk_soc_rib integer DEFAULT NULL;
