@@ -198,6 +198,42 @@ function getDolUserInt($key, $default = 0, $tmpuser = null)
 	return (int) (empty($tmpuser->conf->$key) ? $default : $tmpuser->conf->$key);
 }
 
+
+/**
+ * This mapping defines the conversion to the current internal
+ * names from the alternative allowed names (including effectively deprecated
+ * and future new names (not yet used as internal names).
+ *
+ * This allows to map any temporary or future name to the effective internal name.
+ *
+ * The value is typically the name of module's root directory.
+ */
+define(
+	'MODULE_MAPPING',
+	array(
+		// Map deprecated names to new names
+		'adherent' => 'member',  // Has new directory
+		'member_type' => 'adherent_type',   // No directory, but file called adherent_type
+		'banque' => 'bank',   // Has new directory
+		'contrat' => 'contract', // Has new directory
+		'entrepot' => 'stock',   // Has new directory
+		'projet' => 'project', // Has new directory
+		'categorie' => 'category', // Has old directory
+		'commande' => 'order',    // Has old directory
+		'expedition' => 'shipping', // Has old directory
+		'facture' => 'invoice', // Has old directory
+		'fichinter' => 'intervention', // Has old directory
+		'ficheinter' => 'intervention',  // Backup for 'fichinter'
+		'propale' => 'propal', // Has old directory
+		'socpeople' => 'contact', // Has old directory
+		'fournisseur' => 'supplier',  // Has old directory
+
+		'actioncomm' => 'agenda',  // NO module directory (public dir agenda)
+		'product_price' => 'productprice', // NO directory
+		'product_fournisseur_price' => 'productsupplierprice', // NO directory
+	)
+);
+
 /**
  * Is Dolibarr module enabled
  *
@@ -208,23 +244,36 @@ function isModEnabled($module)
 {
 	global $conf;
 
-	// Fix special cases
-	$arrayconv = array(
-		'bank' => 'banque',
-		'category' => 'categorie',
-		'contract' => 'contrat',
-		'project' => 'projet',
-		'delivery_note' => 'expedition'
-	);
-	if (empty($conf->global->MAIN_USE_NEW_SUPPLIERMOD)) {
+	// Fix old names (map to new names)
+	$arrayconv = MODULE_MAPPING;
+	$arrayconvbis = array_flip(MODULE_MAPPING);
+
+	if (!getDolGlobalString('MAIN_USE_NEW_SUPPLIERMOD')) {
+		// Special cases: both use the same module.
 		$arrayconv['supplier_order'] = 'fournisseur';
 		$arrayconv['supplier_invoice'] = 'fournisseur';
 	}
-	if (!empty($arrayconv[$module])) {
-		$module = $arrayconv[$module];
+	// Special case.
+	// @TODO Replace isModEnabled('delivery_note') with
+	// isModEnabled('shipping') && getDolGlobalString('MAIN_SUBMODULE_EXPEDITION')
+	if ($module == 'delivery_note') {
+		if (!getDolGlobalString('MAIN_SUBMODULE_EXPEDITION')) {
+			return false;
+		} else {
+			$module = 'shipping';
+		}
 	}
 
-	return !empty($conf->modules[$module]);
+	$module_alt = $module;
+	if (!empty($arrayconv[$module])) {
+		$module_alt = $arrayconv[$module];
+	}
+	$module_bis = $module;
+	if (!empty($arrayconvbis[$module])) {
+		$module_bis = $arrayconvbis[$module];
+	}
+
+	return !empty($conf->modules[$module]) || !empty($conf->modules[$module_alt]) || !empty($conf->modules[$module_bis]);
 	//return !empty($conf->$module->enabled);
 }
 
@@ -1648,6 +1697,8 @@ function dol_escape_htmltag($stringtoescape, $keepb = 0, $keepn = 0, $noescapeta
 {
 	if ($noescapetags == 'common') {
 		$noescapetags = 'html,body,a,b,em,hr,i,u,ul,li,br,div,img,font,p,span,strong,table,tr,td,th,tbody';
+		// Add also html5 tags
+		$noescapetags .= ',header,footer,nav,section,menu,menuitem';
 	}
 	if ($cleanalsojavascript) {
 		$stringtoescape = dol_string_onlythesehtmltags($stringtoescape, 0, 0, $cleanalsojavascript, 0, array(), 0);
@@ -3250,7 +3301,7 @@ function dol_print_email($email, $cid = 0, $socid = 0, $addlink = 0, $max = 64, 
 			$newemail .= 'mailto:';
 		}
 		$newemail .= $email;
-		$newemail .= '">';
+		$newemail .= '" target="_blank">';
 		$newemail .= dol_trunc($email, $max);
 		$newemail .= '</a>';
 		if ($showinvalid && !isValidEmail($email)) {
@@ -4295,7 +4346,7 @@ function img_picto($titlealt, $picto, $moreatt = '', $pictoisfullpath = false, $
 			$fakey = $pictowithouttext;
 			$facolor = '';
 			$fasize = '';
-			$fa = 'fas';
+			$fa = getDolGlobalString('MAIN_FONTAWESOME_ICON_STYLE', 'fas');
 			if (in_array($pictowithouttext, array('card', 'bell', 'clock', 'establishment', 'generic', 'minus-square', 'object_generic', 'pdf', 'plus-square', 'timespent', 'note', 'off', 'on', 'object_bookmark', 'bookmark', 'vcard'))) {
 				$fa = 'far';
 			}
@@ -6294,6 +6345,7 @@ function get_localtax($vatrate, $local, $thirdparty_buyer = "", $thirdparty_sell
 	$sql .= " FROM ".MAIN_DB_PREFIX."c_tva as t, ".MAIN_DB_PREFIX."c_country as c";
 	$sql .= " WHERE t.fk_pays = c.rowid AND c.code = '".$db->escape($thirdparty_seller->country_code)."'";
 	$sql .= " AND t.taux = ".((float) $vatratecleaned)." AND t.active = 1";
+	$sql .= " AND t.entity IN (".getEntity('c_tva').")";
 	if (!empty($vatratecode)) {
 		$sql .= " AND t.code ='".$db->escape($vatratecode)."'"; // If we have the code, we use it in priority
 	} else {
@@ -6350,9 +6402,9 @@ function get_localtax_by_third($local)
 
 	$sql  = " SELECT t.localtax".$local." as localtax";
 	$sql .= " FROM ".MAIN_DB_PREFIX."c_tva as t INNER JOIN ".MAIN_DB_PREFIX."c_country as c ON c.rowid = t.fk_pays";
-	$sql .= " WHERE c.code = '".$db->escape($mysoc->country_code)."' AND t.active = 1 AND t.taux = (";
+	$sql .= " WHERE c.code = '".$db->escape($mysoc->country_code)."' AND t.active = 1 AND t.entity IN (".getEntity('c_tva').") AND t.taux = (";
 	$sql .= "SELECT MAX(tt.taux) FROM ".MAIN_DB_PREFIX."c_tva as tt INNER JOIN ".MAIN_DB_PREFIX."c_country as c ON c.rowid = tt.fk_pays";
-	$sql .= " WHERE c.code = '".$db->escape($mysoc->country_code)."' AND tt.active = 1)";
+	$sql .= " WHERE c.code = '".$db->escape($mysoc->country_code)."' AND t.entity IN (".getEntity('c_tva').") AND tt.active = 1)";
 	$sql .= " AND t.localtax".$local."_type <> '0'";
 	$sql .= " ORDER BY t.rowid DESC";
 
@@ -6407,6 +6459,7 @@ function getTaxesFromId($vatrate, $buyer = null, $seller = null, $firstparamisid
 		else $sql.= " WHERE t.fk_pays = c.rowid AND c.code = '".$db->escape($seller->country_code)."'";*/
 		$sql .= " WHERE t.fk_pays = c.rowid AND c.code = '".$db->escape($seller->country_code)."'";
 		$sql .= " AND t.taux = ".((float) $vatratecleaned)." AND t.active = 1";
+		$sql .= " AND t.entity IN (".getEntity('c_tva').")";
 		if ($vatratecode) {
 			$sql .= " AND t.code = '".$db->escape($vatratecode)."'";
 		}
@@ -6563,6 +6616,7 @@ function get_product_vat_for_country($idprod, $thirdpartytouse, $idprodfournpric
 			$sql = "SELECT t.taux as vat_rate, t.code as default_vat_code";
 			$sql .= " FROM ".MAIN_DB_PREFIX."c_tva as t, ".MAIN_DB_PREFIX."c_country as c";
 			$sql .= " WHERE t.active = 1 AND t.fk_pays = c.rowid AND c.code = '".$db->escape($thirdpartytouse->country_code)."'";
+			$sql .= " AND t.entity IN (".getEntity('c_tva').")";
 			$sql .= " ORDER BY t.use_default DESC, t.taux DESC, t.code ASC, t.recuperableonly ASC";
 			$sql .= $db->plimit(1);
 
@@ -6642,6 +6696,7 @@ function get_product_localtax_for_country($idprod, $local, $thirdpartytouse)
 		$sql = "SELECT taux as vat_rate, localtax1, localtax2";
 		$sql .= " FROM ".MAIN_DB_PREFIX."c_tva as t, ".MAIN_DB_PREFIX."c_country as c";
 		$sql .= " WHERE t.active=1 AND t.fk_pays = c.rowid AND c.code='".$db->escape($thirdpartytouse->country_code)."'";
+		$sql .= " AND t.entity IN (".getEntity('c_tva').")";
 		$sql .= " ORDER BY t.taux DESC, t.recuperableonly ASC";
 		$sql .= $db->plimit(1);
 
@@ -7070,7 +7125,7 @@ function dolChmod($filepath, $newmask = '')
 
 	if (!empty($newmask)) {
 		@chmod($filepath, octdec($newmask));
-	} elseif (!empty($conf->global->MAIN_UMASK)) {
+	} elseif (getDolGlobalString('MAIN_UMASK')) {
 		@chmod($filepath, octdec($conf->global->MAIN_UMASK));
 	}
 }
@@ -7180,7 +7235,8 @@ function dol_string_onlythesehtmltags($stringtoclean, $cleanalsosomestyles = 1, 
 	if (empty($allowed_tags)) {
 		$allowed_tags = array(
 			"html", "head", "meta", "body", "article", "a", "abbr", "b", "blockquote", "br", "cite", "div", "dl", "dd", "dt", "em", "font", "img", "ins", "hr", "i", "li",
-			"ol", "p", "q", "s", "section", "span", "strike", "strong", "title", "table", "tr", "th", "td", "u", "ul", "sup", "sub", "blockquote", "pre", "h1", "h2", "h3", "h4", "h5", "h6"
+			"ol", "p", "q", "s", "span", "strike", "strong", "title", "table", "tr", "th", "td", "u", "ul", "sup", "sub", "blockquote", "pre", "h1", "h2", "h3", "h4", "h5", "h6",
+			"header", "footer", "nav", "section", "menu", "menuitem"	// html5 tags
 		);
 	}
 	$allowed_tags[] = "comment";		// this tags is added to manage comment <!--...--> that are replaced into <comment>...</comment>
@@ -7449,6 +7505,42 @@ function dol_htmlwithnojs($stringtoencode, $nouseofiframesandbox = 0, $check = '
 					// Remove the trick added to solve pb with text without parent tag
 					$out = preg_replace('/^<div class="tricktoremove">/', '', $out);
 					$out = preg_replace('/<\/div>$/', '', $out);
+				} catch (Exception $e) {
+					// If error, invalid HTML string with no way to clean it
+					//print $e->getMessage();
+					$out = 'InvalidHTMLStringCantBeCleaned';
+				}
+			}
+
+			if (!empty($out) && getDolGlobalString('MAIN_RESTRICTHTML_ONLY_VALID_HTML_TIDY') && $check != 'restricthtmlallowunvalid') {
+				try {
+					// Try cleaning using tidy
+					if (extension_loaded('tidy') && class_exists("tidy")) {
+						//print "aaa".$out."\n";
+
+						// See options at https://tidy.sourceforge.net/docs/quickref.html
+						$config = array(
+							'clean' => false,
+							'quote-marks' => false,		// do not replace " that are used for real text content (not a string symbol for html attribute) into &quot;
+							'doctype'     => 'strict',
+							'show-body-only' => true,
+							"indent-attributes" => false,
+							"vertical-space" => false,
+							'ident' => false,
+							"wrap" => 0
+							// HTML5 tags
+							//'new-blocklevel-tags' => 'article aside audio bdi canvas details dialog figcaption figure footer header hgroup main menu menuitem nav section source summary template track video',
+							//'new-blocklevel-tags' => 'footer header section menu menuitem'
+							//'new-empty-tags' => 'command embed keygen source track wbr',
+							//'new-inline-tags' => 'audio command datalist embed keygen mark menuitem meter output progress source time video wbr',
+						);
+
+						// Tidy
+						$tidy = new tidy();
+						$out = $tidy->repairString($out, $config, 'utf8');
+
+						//print "xxx".$out;exit;
+					}
 				} catch (Exception $e) {
 					// If error, invalid HTML string with no way to clean it
 					//print $e->getMessage();
@@ -8012,6 +8104,7 @@ function getCommonSubstitutionArray($outputlangs, $onlykey = 0, $exclude = null,
 			$substitutionarray['__REFSUPPLIER__'] = (isset($object->ref_supplier) ? $object->ref_supplier : null);
 			$substitutionarray['__SUPPLIER_ORDER_DATE_DELIVERY__'] = (isset($object->date_livraison) ? dol_print_date($object->date_livraison, 'day', 0, $outputlangs) : '');
 			$substitutionarray['__SUPPLIER_ORDER_DELAY_DELIVERY__'] = (isset($object->availability_code) ? ($outputlangs->transnoentities("AvailabilityType".$object->availability_code) != ('AvailabilityType'.$object->availability_code) ? $outputlangs->transnoentities("AvailabilityType".$object->availability_code) : $outputlangs->convToOutputCharset(isset($object->availability) ? $object->availability : '')) : '');
+			$substitutionarray['__EXPIRATION_DATE__'] = (isset($object->fin_validite) ? dol_print_date($object->fin_validite, 'daytext') : '');
 
 			if (is_object($object) && ($object->element == 'adherent' || $object->element == 'member') && $object->id > 0) {
 				$birthday = (empty($object->birth) ? '' : dol_print_date($object->birth, 'day'));
@@ -8117,6 +8210,20 @@ function getCommonSubstitutionArray($outputlangs, $onlykey = 0, $exclude = null,
 				$substitutionarray['__PROJECT_ID__'] = $project->id;
 				$substitutionarray['__PROJECT_REF__'] = $project->ref;
 				$substitutionarray['__PROJECT_NAME__'] = $project->title;
+			} else {
+				// can substitute variables for project : uses lazy load in "make_substitutions" method
+				$project_id = 0;
+				if ($object->fk_project > 0) {
+					$project_id = $object->fk_project;
+				} elseif ($object->fk_projet > 0) {
+					$project_id = $object->fk_project;
+				}
+				if ($project_id > 0) {
+					// path:class:method:id
+					$substitutionarray['__PROJECT_ID__@lazyload'] = '/projet/class/project.class.php:Project:fetchAndSetSubstitution:' . $project_id;
+					$substitutionarray['__PROJECT_REF__@lazyload'] = '/projet/class/project.class.php:Project:fetchAndSetSubstitution:' . $project_id;
+					$substitutionarray['__PROJECT_NAME__@lazyload'] = '/projet/class/project.class.php:Project:fetchAndSetSubstitution:' . $project_id;
+				}
 			}
 			if (is_object($object) && $object->element == 'project') {
 				$substitutionarray['__PROJECT_NAME__'] = $object->title;
@@ -8303,16 +8410,21 @@ function getCommonSubstitutionArray($outputlangs, $onlykey = 0, $exclude = null,
 
 			if (is_object($object) && $object->element == 'action') {
 				$substitutionarray['__EVENT_LABEL__'] = $object->label;
+				$substitutionarray['__EVENT_TYPE__'] = $outputlangs->trans("Action".$object->type_code);
 				$substitutionarray['__EVENT_DATE__'] = dol_print_date($object->datep, '%A %d %b %Y');
 				$substitutionarray['__EVENT_TIME__'] = dol_print_date($object->datep, '%H:%M:%S');
+				$substitutionarray['__EVENT_DATE_SHORT__'] = dol_print_date($object->datep, 'day', 0, $outputlangs);
+				$substitutionarray['__EVENT_TIME_SHORT__'] = dol_print_date($object->datep, 'hour', 0, $outputlangs);
 			}
 		}
 	}
 	if ((empty($exclude) || !in_array('objectamount', $exclude)) && (empty($include) || in_array('objectamount', $include))) {
 		include_once DOL_DOCUMENT_ROOT.'/core/lib/functionsnumtoword.lib.php';
 
-		$substitutionarray['__DATE_YMD__']        = is_object($object) ? (isset($object->date) ? dol_print_date($object->date, 'day', 0, $outputlangs) : null) : '';
-		$substitutionarray['__DATE_DUE_YMD__']    = is_object($object) ? (isset($object->date_lim_reglement) ? dol_print_date($object->date_lim_reglement, 'day', 0, $outputlangs) : null) : '';
+		$substitutionarray['__DATE_YMD__']          = is_object($object) ? (isset($object->date) ? dol_print_date($object->date, 'day', 0, $outputlangs) : null) : '';
+		$substitutionarray['__DATE_DUE_YMD__']      = is_object($object) ? (isset($object->date_lim_reglement) ? dol_print_date($object->date_lim_reglement, 'day', 0, $outputlangs) : null) : '';
+		$substitutionarray['__DATE_YMD_TEXT__']     = is_object($object) ? (isset($object->date) ? dol_print_date($object->date, 'daytext', 0, $outputlangs) : null) : '';
+		$substitutionarray['__DATE_DUE_YMD_TEXT__'] = is_object($object) ? (isset($object->date_lim_reglement) ? dol_print_date($object->date_lim_reglement, 'daytext', 0, $outputlangs) : null) : '';
 
 		$already_payed_all = 0;
 		if (is_object($object) && ($object instanceof Facture)) {
@@ -8339,6 +8451,21 @@ function getCommonSubstitutionArray($outputlangs, $onlykey = 0, $exclude = null,
 		}
 
 		// Amount keys formated in a currency
+		if (is_object($object) && $object->element == 'facture') {
+			$totalpaye = $object->getSommePaiement();
+			$totalcreditnotes = $object->getSumCreditNotesUsed();
+			$totaldeposits = $object->getSumDepositsUsed();
+			$resteapayer = price2num($object->total_ttc - $totalpaye - $totalcreditnotes - $totaldeposits, 'MT');
+			$substitutionarray['__FACDATE__'] = (isset($object->date) ? dol_print_date($object->date, 'daytext', 0, $outputlangs) : '');
+			$substitutionarray['__FACDATELIMREG__'] = (isset($object->date_lim_reglement) ? dol_print_date($object->date_lim_reglement, 'daytext', 0, $outputlangs) : '');
+			$substitutionarray['__FACTOTALTTC_2D__'] = number_format($object->total_ttc, 2, ',', ' ');
+			$substitutionarray['__FACTOTALHT_2D__'] = number_format($object->total_ht, 2, ',', ' ');
+			$substitutionarray['__FACTOTALHT_2DC__'] = price($object->total_ht, 0, $outputlangs, 1, 2, 2, 'auto');
+			$substitutionarray['__FACTOTALTTC_2DC__'] = price($object->total_ttc, 0, $outputlangs, 1, 2, 2, 'auto');
+			$substitutionarray['__FACREST_2D__'] = number_format($resteapayer, 2, ',', ' ');
+			$substitutionarray['__FACREST_2DC__'] = price($resteapayer, 0, $outputlangs, 1, 2, 2, 'auto');
+			$substitutionarray['__SIT_NUM__'] = ($object->situation_counter ?? '');
+		}
 		$substitutionarray['__AMOUNT_EXCL_TAX_FORMATED__'] = is_object($object) ? ($object->total_ht ? price($object->total_ht, 0, $outputlangs, 0, -1, -1, $conf->currency) : null) : '';
 		$substitutionarray['__AMOUNT_FORMATED__']          = is_object($object) ? ($object->total_ttc ? price($object->total_ttc, 0, $outputlangs, 0, -1, -1, $conf->currency) : null) : '';
 		$substitutionarray['__AMOUNT_REMAIN_FORMATED__'] = is_object($object) ? ($object->total_ttc ? price($object->total_ttc - $already_payed_all, 0, $outputlangs, 0, -1, -1, $conf->currency) : null) : '';
@@ -8429,7 +8556,7 @@ function getCommonSubstitutionArray($outputlangs, $onlykey = 0, $exclude = null,
  */
 function make_substitutions($text, $substitutionarray, $outputlangs = null, $converttextinhtmlifnecessary = 0)
 {
-	global $conf, $langs;
+	global $conf, $db, $langs;
 
 	if (!is_array($substitutionarray)) {
 		return 'ErrorBadParameterSubstitutionArrayWhenCalling_make_substitutions';
@@ -8532,6 +8659,54 @@ function make_substitutions($text, $substitutionarray, $outputlangs = null, $con
 				$value = dol_nl2br("$value");
 			}
 			$text = str_replace("$key", "$value", $text); // We must keep the " to work when value is 123.5 for example
+		}
+	}
+
+	$memory_object_list = array();
+	foreach ($substitutionarray as $key => $value) {
+		$lazy_load_arr = array();
+		if (preg_match('/(__[A-Z\_]+__)@lazyload$/', $key, $lazy_load_arr)) {
+			if (isset($lazy_load_arr[1]) && !empty($lazy_load_arr[1])) {
+				$key_to_substitute = $lazy_load_arr[1];
+				if (preg_match('/' . preg_quote($key_to_substitute, '/') . '/', $text)) {
+					$param_arr = explode(':', $value);
+					// path:class:method:id
+					if (count($param_arr) == 4) {
+						$path = $param_arr[0];
+						$class = $param_arr[1];
+						$method = $param_arr[2];
+						$id = (int) $param_arr[3];
+
+						// load class file and init object list in memory
+						if (!isset($memory_object_list[$class])) {
+							if (dol_is_file(DOL_DOCUMENT_ROOT . $path)) {
+								require_once DOL_DOCUMENT_ROOT . $path;
+								if (class_exists($class)) {
+									$memory_object_list[$class] = array(
+										'list' => array(),
+									);
+								}
+							}
+						}
+
+						// fetch object and set substitution
+						if (isset($memory_object_list[$class]) && isset($memory_object_list[$class]['list'])) {
+							if (method_exists($class, $method)) {
+								if (!isset($memory_object_list[$class]['list'][$id])) {
+									$tmpobj = new $class($db);
+									$valuetouseforsubstitution = $tmpobj->$method($id, $key_to_substitute);
+									$memory_object_list[$class]['list'][$id] = $tmpobj;
+								} else {
+									$tmpobj = $memory_object_list[$class]['list'][$id];
+									$valuetouseforsubstitution = $tmpobj->$method($id, $key_to_substitute, true);
+								}
+
+								$text = str_replace("$key_to_substitute", "$valuetouseforsubstitution", $text); // We must keep the " to work when value is 123.5 for example
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -9221,11 +9396,15 @@ function verifCond($strToEvaluate)
  * Replace eval function to add more security.
  * This function is called by verifCond() or trans() and transnoentitiesnoconv().
  *
- * @param 	string	$s					String to evaluate
- * @param	int		$returnvalue		0=No return (used to execute eval($a=something)). 1=Value of eval is returned (used to eval($something)).
- * @param   int     $hideerrors     	1=Hide errors
- * @param	string	$onlysimplestring	'0' (used for computed property of extrafields)=Accept all chars, '1' (most common use)=Accept only simple string with char 'a-z0-9\s^$_+-.*>&|=!?():"\',/@';',  '2' (rarely used)=Accept also '[]'
- * @return	mixed						Nothing or return result of eval
+ * @param 	string		$s					String to evaluate
+ * @param	int<0,1>	$returnvalue		0=No return (deprecated, used to execute eval($a=something)). 1=Value of eval is returned (used to eval($something)).
+ * @param   int<0,1>	$hideerrors     	1=Hide errors
+ * @param	string		$onlysimplestring	'0' (deprecated, do not use it anymore)=Accept all chars,
+ *                                          '1' (most common use)=Accept only simple string with char 'a-z0-9\s^$_+-.*>&|=!?():"\',/@';',
+ *                                          '2' (used for example for the compute property of extrafields)=Accept also '[]'
+ * @return	void|string						Nothing or return result of eval (even if type can be int, it is safer to assume string and find all potential typing issues as abs(dol_eval(...)).
+ * @see verifCond(), checkPHPCode() to see sanitizing rules that should be very close.
+ * @phan-suppress PhanPluginUnsafeEval
  */
 function dol_eval($s, $returnvalue = 0, $hideerrors = 1, $onlysimplestring = '1')
 {
@@ -9243,43 +9422,83 @@ function dol_eval($s, $returnvalue = 0, $hideerrors = 1, $onlysimplestring = '1'
 
 	try {
 		// Test on dangerous char (used for RCE), we allow only characters to make PHP variable testing
-		if ($onlysimplestring == '1') {
-			// We must accept: '1 && getDolGlobalInt("doesnotexist1") && $conf->global->MAIN_FEATURES_LEVEL'
-			// We must accept: '$conf->barcode->enabled || preg_match(\'/^AAA/\',$leftmenu)'
-			// We must accept: '$user->rights->cabinetmed->read && !$object->canvas=="patient@cabinetmed"'
-			if (preg_match('/[^a-z0-9\s'.preg_quote('^$_+-.*>&|=!?():"\',/@', '/').']/i', $s)) {
+		if ($onlysimplestring == '1' || $onlysimplestring == '2') {
+			// We must accept with 1: '1 && getDolGlobalInt("doesnotexist1") && getDolGlobalString("MAIN_FEATURES_LEVEL")'
+			// We must accept with 1: '$user->hasRight("cabinetmed", "read") && !$object->canvas=="patient@cabinetmed"'
+			// We must accept with 2: (($reloadedobj = new Task($db)) && ($reloadedobj->fetchNoCompute($object->id) > 0) && ($secondloadedobj = new Project($db)) && ($secondloadedobj->fetchNoCompute($reloadedobj->fk_project) > 0)) ? $secondloadedobj->ref : "Parent project not found"
+
+			// Check if there is dynamic call (first we check chars are all into use a whitelist chars)
+			$specialcharsallowed = '^$_+-.*>&|=!?():"\',/@';
+			if ($onlysimplestring == '2') {
+				$specialcharsallowed .= '[]';
+			}
+			if (getDolGlobalString('MAIN_ALLOW_UNSECURED_SPECIAL_CHARS_IN_DOL_EVAL')) {
+				$specialcharsallowed .= getDolGlobalString('MAIN_ALLOW_UNSECURED_SPECIAL_CHARS_IN_DOL_EVAL');
+			}
+			if (preg_match('/[^a-z0-9\s'.preg_quote($specialcharsallowed, '/').']/i', $s)) {
 				if ($returnvalue) {
 					return 'Bad string syntax to evaluate (found chars that are not chars for simplestring): '.$s;
 				} else {
-					dol_syslog('Bad string syntax to evaluate (found chars that are not chars for simplestring): '.$s);
+					dol_syslog('Bad string syntax to evaluate (found chars that are not chars for a simple clean eval string): '.$s, LOG_WARNING);
 					return '';
 				}
 				// TODO
 				// We can exclude all parenthesis ( that are not '($db' and 'getDolGlobalInt(' and 'getDolGlobalString(' and 'preg_match(' and 'isModEnabled('
 				// ...
 			}
-		} elseif ($onlysimplestring == '2') {
-			// We must accept: (($reloadedobj = new Task($db)) && ($reloadedobj->fetchNoCompute($object->id) > 0) && ($secondloadedobj = new Project($db)) && ($secondloadedobj->fetchNoCompute($reloadedobj->fk_project) > 0)) ? $secondloadedobj->ref : "Parent project not found"
-			if (preg_match('/[^a-z0-9\s'.preg_quote('^$_+-.*>&|=!?():"\',/@[]', '/').']/i', $s)) {
+
+			// Check if there is dynamic call (first we use black list patterns)
+			if (preg_match('/\$[\w]*\s*\(/', $s)) {
+				if ($returnvalue) {
+					return 'Bad string syntax to evaluate (mode '.$onlysimplestring.', found a call using of "$abc(" or "$abc (" instead of using the direct name of the function): '.$s;
+				} else {
+					dol_syslog('Bad string syntax to evaluate (mode '.$onlysimplestring.', found a call using of "$abc(" or "$abc (" instead of using the direct name of the function): '.$s, LOG_WARNING);
+					return '';
+				}
+			}
+
+			// Now we check if we try dynamic call (by removing white list pattern of using parenthesis then testing if a parenthesis exists)
+			$savescheck = '';
+			$scheck = $s;
+			while ($scheck && $savescheck != $scheck) {
+				$savescheck = $scheck;
+				$scheck = preg_replace('/->[a-zA-Z0-9_]+\(/', '->__METHOD__', $scheck);	// accept parenthesis in '...->method(...'
+				$scheck = preg_replace('/^\(/', '__PARENTHESIS__ ', $scheck);	// accept parenthesis in '(...'. Must replace with __PARENTHESIS__ with a space after to allow following substitutions
+				$scheck = preg_replace('/\s\(/', '__PARENTHESIS__ ', $scheck);	// accept parenthesis in '... (' like in 'if ($a == 1)'. Must replace with __PARENTHESIS__ with a space after to allow following substitutions
+				$scheck = preg_replace('/^!?[a-zA-Z0-9_]+\(/', '__FUNCTION__', $scheck); // accept parenthesis in 'function(' and '!function('
+				$scheck = preg_replace('/\s!?[a-zA-Z0-9_]+\(/', '__FUNCTION__', $scheck); // accept parenthesis in '... function(' and '... !function('
+				$scheck = preg_replace('/(\^|\')\(/', '__REGEXSTART__', $scheck);	// To allow preg_match('/^(aaa|bbb)/'...  or  isStringVarMatching('leftmenu', '(aaa|bbb)')
+			}
+			//print 'scheck='.$scheck." : ".strpos($scheck, '(')."<br>\n";
+			if (strpos($scheck, '(') !== false) {
 				if ($returnvalue) {
 					return 'Bad string syntax to evaluate (found chars that are not chars for simplestring): '.$s;
 				} else {
-					dol_syslog('Bad string syntax to evaluate (found chars that are not chars for simplestring): '.$s);
+					dol_syslog('Bad string syntax to evaluate (mode '.$onlysimplestring.', found call of a function or method without using the direct name of the function): '.$s, LOG_WARNING);
 					return '';
 				}
 				// TODO
 				// We can exclude all parenthesis ( that are not '($db' and 'getDolGlobalInt(' and 'getDolGlobalString(' and 'preg_match(' and 'isModEnabled('
 				// ...
 			}
+
+			// TODO
+			// We can exclude $ char that are not:
+			// $db, $langs, $leftmenu, $topmenu, $user, $langs, $objectoffield, $object...,
 		}
 		if (is_array($s) || $s === 'Array') {
-			return 'Bad string syntax to evaluate (value is Array) '.var_export($s, true);
+			if ($returnvalue) {
+				return 'Bad string syntax to evaluate (value is Array): '.var_export($s, true);
+			} else {
+				dol_syslog('Bad string syntax to evaluate (value is Array): '.var_export($s, true), LOG_WARNING);
+				return '';
+			}
 		}
 		if (strpos($s, '::') !== false) {
 			if ($returnvalue) {
 				return 'Bad string syntax to evaluate (double : char is forbidden): '.$s;
 			} else {
-				dol_syslog('Bad string syntax to evaluate (double : char is forbidden): '.$s);
+				dol_syslog('Bad string syntax to evaluate (double : char is forbidden): '.$s, LOG_WARNING);
 				return '';
 			}
 		}
@@ -9287,7 +9506,7 @@ function dol_eval($s, $returnvalue = 0, $hideerrors = 1, $onlysimplestring = '1'
 			if ($returnvalue) {
 				return 'Bad string syntax to evaluate (backtick char is forbidden): '.$s;
 			} else {
-				dol_syslog('Bad string syntax to evaluate (backtick char is forbidden): '.$s);
+				dol_syslog('Bad string syntax to evaluate (backtick char is forbidden): '.$s, LOG_WARNING);
 				return '';
 			}
 		}
@@ -9295,22 +9514,24 @@ function dol_eval($s, $returnvalue = 0, $hideerrors = 1, $onlysimplestring = '1'
 			if ($returnvalue) {
 				return 'Bad string syntax to evaluate (dot char is forbidden): '.$s;
 			} else {
-				dol_syslog('Bad string syntax to evaluate (dot char is forbidden): '.$s);
+				dol_syslog('Bad string syntax to evaluate (dot char is forbidden): '.$s, LOG_WARNING);
 				return '';
 			}
 		}
 
 		// We block use of php exec or php file functions
-		$forbiddenphpstrings = array('$$');
+		$forbiddenphpstrings = array('$$', '$_', '}[');
 		$forbiddenphpstrings = array_merge($forbiddenphpstrings, array('_ENV', '_SESSION', '_COOKIE', '_GET', '_POST', '_REQUEST', 'ReflectionFunction'));
 
-		$forbiddenphpfunctions = array("exec", "passthru", "shell_exec", "system", "proc_open", "popen");
-		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("dol_eval", "executeCLI", "verifCond"));	// native dolibarr functions
+		$forbiddenphpfunctions = array();
 		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("base64_decode", "rawurldecode", "urldecode", "str_rot13", "hex2bin")); // decode string functions used to obfuscated function name
 		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("fopen", "file_put_contents", "fputs", "fputscsv", "fwrite", "fpassthru", "require", "include", "mkdir", "rmdir", "symlink", "touch", "unlink", "umask"));
+		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("override_function", "session_id", "session_create_id", "session_regenerate_id"));
 		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("get_defined_functions", "get_defined_vars", "get_defined_constants", "get_declared_classes"));
 		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("function", "call_user_func"));
 		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("require", "include", "require_once", "include_once"));
+		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("exec", "passthru", "shell_exec", "system", "proc_open", "popen"));
+		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("dol_eval", "executeCLI", "verifCond"));	// native dolibarr functions
 		$forbiddenphpfunctions = array_merge($forbiddenphpfunctions, array("eval", "create_function", "assert", "mb_ereg_replace")); // function with eval capabilities
 
 		$forbiddenphpmethods = array('invoke', 'invokeArgs');	// Method of ReflectionFunction to execute a function
@@ -9326,6 +9547,7 @@ function dol_eval($s, $returnvalue = 0, $hideerrors = 1, $onlysimplestring = '1'
 			$s = preg_replace('/'.$forbiddenphpmethodsregex.'/i', '__forbiddenstring__', $s);
 			//$s = preg_replace('/\$[a-zA-Z0-9_\->\$]+\(/i', '', $s);	// Remove $function( call and $mycall->mymethod(
 		} while ($oldstringtoclean != $s);
+
 
 		if (strpos($s, '__forbiddenstring__') !== false) {
 			dol_syslog('Bad string syntax to evaluate: '.$s, LOG_WARNING);
@@ -10359,7 +10581,7 @@ function getAdvancedPreviewUrl($modulepart, $relativepath, $alldata = 0, $param 
 
 	if ($alldata == 1) {
 		if ($isAllowedForPreview) {
-			return array('target'=>'_blank', 'css'=>'documentpreview', 'url'=>DOL_URL_ROOT.'/document.php?modulepart='.$modulepart.'&attachment=0&file='.urlencode($relativepath).($param ? '&'.$param : ''), 'mime'=>dol_mimetype($relativepath));
+			return array('target'=>'_blank', 'css'=>'documentpreview', 'url'=>DOL_URL_ROOT.'/document.php?modulepart='.urlencode($modulepart).'&attachment=0&file='.urlencode($relativepath).($param ? '&'.$param : ''), 'mime'=>dol_mimetype($relativepath));
 		} else {
 			return array();
 		}
@@ -10367,7 +10589,14 @@ function getAdvancedPreviewUrl($modulepart, $relativepath, $alldata = 0, $param 
 
 	// old behavior, return a string
 	if ($isAllowedForPreview) {
-		return 'javascript:document_preview(\''.dol_escape_js(DOL_URL_ROOT.'/document.php?modulepart='.$modulepart.'&attachment=0&file='.urlencode($relativepath).($param ? '&'.$param : '')).'\', \''.dol_mimetype($relativepath).'\', \''.dol_escape_js($langs->trans('Preview')).'\')';
+		$tmpurl = DOL_URL_ROOT.'/document.php?modulepart='.urlencode($modulepart).'&attachment=0&file='.urlencode($relativepath).($param ? '&'.$param : '');
+		$title = $langs->transnoentities("Preview");
+		//$title = '%27-alert(document.domain)-%27';
+		//$tmpurl = 'file='.urlencode("'-alert(document.domain)-'_small.jpg");
+
+		// We need to urlencode the parameter after the dol_escape_js($tmpurl) because  $tmpurl may contain n url with param file=abc%27def if file has a ' inside.
+		// and when we click on href with this javascript string, a urlcode is done by browser, converted the %27 of file param
+		return 'javascript:document_preview(\''.urlencode(dol_escape_js($tmpurl)).'\', \''.urlencode(dol_mimetype($relativepath)).'\', \''.urlencode(dol_escape_js($title)).'\')';
 	} else {
 		return '';
 	}
@@ -12000,25 +12229,34 @@ function jsonOrUnserialize($stringtodecode)
 /**
  * forgeSQLFromUniversalSearchCriteria
  *
- * @param 	string		$filter		String with universal search string. Must be '(aaa:bbb:...) OR (ccc:ddd:...) ...' with
+ * @param 	string		$filter		String with universal search string. Must be '(aaa:bbb:ccc) OR (ddd:eeee:fff) ...' with
  * 									aaa is a field name (with alias or not) and
  * 									bbb is one of this operator '=', '<', '>', '<=', '>=', '!=', 'in', 'notin', 'like', 'notlike', 'is', 'isnot'.
+ * 									ccc must not contains ( or )
  * 									Example: '((client:=:1) OR ((client:>=:2) AND (client:<=:3))) AND (client:!=:8) AND (nom:like:'a%')'
  * @param	string		$errorstr	Error message string
- * @param	int			$noand		1=Do not add the AND before the condition string.
- * @param	int			$nopar		1=Do not add the perenthesis around the condition string.
- * @param	int			$noerror	1=If search criteria is not valid, does not return an error string but invalidate the SQL
+ * @param	int<0,1>	$noand		1=Do not add the AND before the condition string.
+ * @param	int<0,1>	$nopar		1=Do not add the parenthesis around the final condition string.
+ * @param	int<0,1>	$noerror	1=If search criteria is not valid, does not return an error string but invalidate the SQL
  * @return	string					Return forged SQL string
+ * @see dolSqlDateFilter()
+ * @see natural_search()
  */
 function forgeSQLFromUniversalSearchCriteria($filter, &$errorstr = '', $noand = 0, $nopar = 0, $noerror = 0)
 {
+	global $db, $user;
+
+	if ($filter === '') {
+		return '';
+	}
 	if (!preg_match('/^\(.*\)$/', $filter)) {    // If $filter does not start and end with ()
 		$filter = '(' . $filter . ')';
 	}
 
 	$regexstring = '\(([a-zA-Z0-9_\.]+:[<>!=insotlke]+:[^\(\)]+)\)';	// Must be  (aaa:bbb:...) with aaa is a field name (with alias or not) and bbb is one of this operator '=', '<', '>', '<=', '>=', '!=', 'in', 'notin', 'like', 'notlike', 'is', 'isnot'
+	$firstandlastparenthesis = 0;
 
-	if (!dolCheckFilters($filter, $errorstr)) {
+	if (!dolCheckFilters($filter, $errorstr, $firstandlastparenthesis)) {
 		if ($noerror) {
 			return '1 = 2';
 		} else {
@@ -12028,48 +12266,87 @@ function forgeSQLFromUniversalSearchCriteria($filter, &$errorstr = '', $noand = 
 
 	// Test the filter syntax
 	$t = preg_replace_callback('/'.$regexstring.'/i', 'dolForgeDummyCriteriaCallback', $filter);
-	$t = str_replace(array('and','or','AND','OR',' '), '', $t);		// Remove the only strings allowed between each () criteria
+	$t = str_ireplace(array('and', 'or', ' '), '', $t);		// Remove the only strings allowed between each () criteria
 	// If the string result contains something else than '()', the syntax was wrong
 	if (preg_match('/[^\(\)]/', $t)) {
-		$errorstr = 'Bad syntax of the search string';
+		$tmperrorstr = 'Bad syntax of the search string';
+		$errorstr = 'Bad syntax of the search string: '.$filter;
 		if ($noerror) {
 			return '1 = 2';
 		} else {
-			return 'Filter syntax error - '.$errorstr;		// Bad syntax of the search string, we return an error message or force a SQL not found
+			return 'Filter error - '.$tmperrorstr;		// Bad syntax of the search string, we return an error message or force a SQL not found
 		}
 	}
 
-	return ($noand ? "" : " AND ").($nopar ? "" : '(').preg_replace_callback('/'.$regexstring.'/i', 'dolForgeCriteriaCallback', $filter).($nopar ? "" : ')');
+	$ret = ($noand ? "" : " AND ").($nopar ? "" : '(').preg_replace_callback('/'.$regexstring.'/i', 'dolForgeCriteriaCallback', $filter).($nopar ? "" : ')');
+
+	if (is_object($db)) {
+		$ret = str_replace('__NOW__', $db->idate(dol_now()), $ret);
+	}
+	if (is_object($user)) {
+		$ret = str_replace('__USER_ID__', (string) $user->id, $ret);
+	}
+
+	return $ret;
 }
 
 /**
  * Return if a $sqlfilters parameter has a valid balance of parenthesis
  *
- * @param	string  		$sqlfilters     sqlfilter string
- * @param	string			$error			Error message
- * @return 	boolean			   				True if valid, False if not valid ($error is filled with the reason in such a case)
+ * @param	string  		$sqlfilters     	Universal SQL filter string. Must have been trimmed before.
+ * @param	string			$error				Returned error message
+ * @param	int				$parenthesislevel	Returned level of global parenthesis that we can remove/simplify, 0 if error or we can't simplify.
+ * @return 	boolean			   					True if valid, False if not valid ($error returned parameter is filled with the reason in such a case)
+ * @see forgeSQLFromUniversalSearchCriteria()
  */
-function dolCheckFilters($sqlfilters, &$error = '')
+function dolCheckFilters($sqlfilters, &$error = '', &$parenthesislevel = 0)
 {
 	//$regexstring='\(([^:\'\(\)]+:[^:\'\(\)]+:[^:\(\)]+)\)';
 	//$tmp=preg_replace_all('/'.$regexstring.'/', '', $sqlfilters);
 	$tmp = $sqlfilters;
-	$i = 0; $nb = strlen($tmp);
+
+	$nb = dol_strlen($tmp);
 	$counter = 0;
+	$parenthesislevel = 0;
+
+	$error = '';
+
+	$i = 0;
 	while ($i < $nb) {
-		if ($tmp[$i] == '(') {
+		$char = dol_substr($tmp, $i, 1);
+
+		if ($char == '(') {
+			if ($i == $parenthesislevel && $parenthesislevel == $counter) {
+				// We open a parenthesis and it is the first char
+				$parenthesislevel++;
+			}
 			$counter++;
+		} elseif ($char == ')') {
+			$nbcharremaining = ($nb - $i - 1);
+			if ($nbcharremaining >= $counter) {
+				$parenthesislevel = min($parenthesislevel, $counter - 1);
 		}
-		if ($tmp[$i] == ')') {
+			if ($parenthesislevel > $counter && $nbcharremaining >= $counter) {
+				$parenthesislevel = $counter;
+			}
 			$counter--;
 		}
 		if ($counter < 0) {
-			$error = "Wrond balance of parenthesis in sqlfilters=".$sqlfilters;
+			$error = "Wrong balance of parenthesis in sqlfilters=".$sqlfilters;
+			$parenthesislevel = 0;
 			dol_syslog($error, LOG_WARNING);
 			return false;
 		}
 		$i++;
 	}
+
+	if ($counter > 0) {
+		$error = "Wrong balance of parenthesis in sqlfilters=".$sqlfilters;
+		$parenthesislevel = 0;
+		dol_syslog($error, LOG_WARNING);
+		return false;
+	}
+
 	return true;
 }
 
