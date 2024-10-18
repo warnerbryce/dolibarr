@@ -634,3 +634,7 @@ UPDATE llx_mrp_production SET disable_stock_change = 0 WHERE disable_stock_chang
 -- ADD fk_soc_rib in prelevement
 ALTER TABLE llx_prelevement_demande ADD COLUMN fk_soc_rib integer DEFAULT NULL;
 ALTER TABLE llx_prelevement_lignes ADD COLUMN fk_soc_rib integer DEFAULT NULL;
+
+-- Update website type
+UPDATE llx_societe_account SET site = 'dolibarr_website' WHERE fk_website > 0 AND site IS NULL;
+ALTER TABLE llx_societe_account MODIFY COLUMN site varchar(128) NOT NULL;
