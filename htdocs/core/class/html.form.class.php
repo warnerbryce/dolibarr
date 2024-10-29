@@ -6434,10 +6434,11 @@ class Form
 	 *                         Sinon la TVA proposee par defaut=0. Fin de regle.
 	 * @param bool $options_only Return HTML options lines only (for ajax treatment)
 	 * @param int $mode 0=Use vat rate as key in combo list, 1=Add VAT code after vat rate into key, -1=Use id of vat line as key
-	 * @param		int			$show_empty		0 (by default) no empty value allowed, 1 to show an empty value
+	 *  @param  int<0,2>	$type_vat				0=All type, 1=VAT rate sale, 2=VAT rate purchase
+	 * 	@param 	int<0,1> 	$show_empty				0 (by default) no empty value allowed, 1 to show an empty value
 	 * @return		string
 	 */
-	public function load_tva($htmlname = 'tauxtva', $selectedrate = '', $societe_vendeuse = '', $societe_acheteuse = '', $idprod = 0, $info_bits = 0, $type = '', $options_only = false, $mode = 0, $show_empty = 0)
+	public function load_tva($htmlname = 'tauxtva', $selectedrate = '', $societe_vendeuse = '', $societe_acheteuse = '', $idprod = 0, $info_bits = 0, $type = '', $options_only = false, $mode = 0, $type_vat = 0, $show_empty = 0)
 	{
 		// phpcs:enable
 		global $langs, $conf, $mysoc;
