@@ -3076,10 +3076,11 @@ abstract class CommonObject
 			if ($resql) {
 				$i = 0;
 				$num = $this->db->num_rows($resql);
+				$grandchild = getDolGlobalInt('MAIN_CARE_GRANDCHILD');
 				while ($i < $num) {
 					$row = $this->db->fetch_row($resql);
 					$rows[] = $row[0]; // Add parent line into array rows
-					$childrens = $this->getChildrenOfLine($row[0], 1);
+					$childrens = $this->getChildrenOfLine($row[0], $grandchild);
 					if (!empty($childrens)) {
 						foreach ($childrens as $child) {
 							array_push($rows, $child);
