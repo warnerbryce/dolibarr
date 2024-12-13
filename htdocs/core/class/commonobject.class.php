@@ -3076,10 +3076,11 @@ abstract class CommonObject
 			if ($resql) {
 				$i = 0;
 				$num = $this->db->num_rows($resql);
+				$grandchild = getDolGlobalInt('MAIN_CARE_GRANDCHILD');
 				while ($i < $num) {
 					$row = $this->db->fetch_row($resql);
 					$rows[] = $row[0]; // Add parent line into array rows
-					$childrens = $this->getChildrenOfLine($row[0], 1);
+					$childrens = $this->getChildrenOfLine($row[0], $grandchild);
 					if (!empty($childrens)) {
 						foreach ($childrens as $child) {
 							array_push($rows, $child);
@@ -8246,6 +8247,10 @@ abstract class CommonObject
 					if (($mode == 'create') && abs($visibility) != 1 && abs($visibility) != 3) {
 						continue; // <> -1 and <> 1 and <> 3 = not visible on forms, only on list
 					} elseif (($mode == 'edit') && abs($visibility) != 1 && abs($visibility) != 3 && abs($visibility) != 4) {
+						// We need to make sure, that the values of hidden extrafields are also part of $_POST. Otherwise, they would be empty after an update of the object. See also getOptionalsFromPost
+						$ef_name = 'options_' . $key;
+						$ef_value = $this->array_options[$ef_name];
+						$out .= '<input type="hidden" name="' . $ef_name . '" id="' . $ef_name . '" value="' . $ef_value . '" />' . "\n";
 						continue; // <> -1 and <> 1 and <> 3 = not visible on forms, only on list and <> 4 = not visible at the creation
 					} elseif ($mode == 'view' && empty($visibility)) {
 						continue;
