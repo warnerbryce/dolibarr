@@ -572,8 +572,8 @@ abstract class CommonDocGenerator
 			$resarray[$array_key.'_total_discount_ht'] = '';
 		}
 
-		if ($object->element == 'facture' ) {
-			$resarray[$array_key.'_type_label'] = (empty($invoice_source)) ? '' : $invoice_source->getLibType(0);
+		if ($object->element == 'facture' || $object->element == 'invoice_supplier') {
+			$resarray[$array_key.'_type_label'] = (empty($object)) ? '' : $object->getLibType(0);
 		}
 
 		// Fetch project information if there is a project assigned to this object
