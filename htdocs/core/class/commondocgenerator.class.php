@@ -752,6 +752,10 @@ abstract class CommonDocGenerator
 			$array_key.'_remain_to_pay' => price2num($object->total_ttc - $already_payed_all, 'MT')
 		);
 
+		if ($object->element == 'facture' || $object->element == 'invoice_supplier') {
+			$resarray[$array_key.'_type_label'] = (empty($object)) ? '' : $object->getLibType(0);
+		}
+		
 		if (in_array($object->element, array('facture', 'invoice', 'supplier_invoice', 'facture_fournisseur'))) {
 			$bank_account = null;
 
