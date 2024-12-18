@@ -168,7 +168,6 @@ abstract class CommonDocGenerator
 			'myuser_dateemploymentend'=>dol_print_date($user->dateemploymentend, 'day', 'tzuser'),
 			'myuser_gender'=>$user->gender,
 		);
-		
 		// Retrieve extrafields
 		if (is_array($user->array_options) && count($user->array_options)) {
 			$array_user = $this->fill_substitutionarray_with_extrafields($user, $array_user, $extrafields, 'myuser', $outputlangs);
@@ -913,7 +912,6 @@ abstract class CommonDocGenerator
 			'line_surface'=>empty($line->surface) ? '' : $line->surface * $line->qty_shipped.' '.measuringUnitString(0, 'surface', $line->surface_units),
 			'line_volume'=>empty($line->volume) ? '' : $line->volume * $line->qty_shipped.' '.measuringUnitString(0, 'volume', $line->volume_units),
 		);
-		
 		// Retrieve extrafields
 		$extrafieldkey = $line->element;
 		$array_key = "line";
