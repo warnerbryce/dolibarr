@@ -168,6 +168,7 @@ abstract class CommonDocGenerator
 			'myuser_dateemploymentend'=>dol_print_date($user->dateemploymentend, 'day', 'tzuser'),
 			'myuser_gender'=>$user->gender,
 		);
+		
 		// Retrieve extrafields
 		if (is_array($user->array_options) && count($user->array_options)) {
 			$array_user = $this->fill_substitutionarray_with_extrafields($user, $array_user, $extrafields, 'myuser', $outputlangs);
