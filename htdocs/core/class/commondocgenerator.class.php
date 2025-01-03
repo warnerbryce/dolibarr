@@ -643,7 +643,7 @@ abstract class CommonDocGenerator
 					}
 					if (!empty($account->bic)) {
 						$resarray[$array_key.'_payment_info'] .= "<strong>" . $outputlangs->transnoentities('BIC') .' : '. $outputlangs->convToOutputCharset($account->bic) . "</strong><br>";
-						// I alternarte between <strong> and <b> because getting twice the same tag in the same key get substitued wrong
+						// I alternarte between <strong> and <b> because getting twice the same tag in the same key get substituted wrong
 					}
 				}
 			}
