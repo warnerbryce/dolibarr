@@ -580,8 +580,10 @@ abstract class CommonDocGenerator
 			$resarray[$array_key.'_total_discount_ht_locale'] = '';
 			$resarray[$array_key.'_total_discount_ht'] = '';
 		}
+
 		// Print Payment infos for Transfer or Check
  		if ($object->element == 'facture' || $object->element == 'propal') {
+			$resarray[$array_key.'_payment_info'] = '';
 			if ($object->mode_reglement_code == 'CHQ') {
 				if (getDolGlobalInt('FACTURE_CHQ_NUMBER')) {
 					if ($conf->global->FACTURE_CHQ_NUMBER > 0) {
@@ -631,7 +633,7 @@ abstract class CommonDocGenerator
 						}
 					}
 					if (!empty($account->domiciliation)) {
-						$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('Address') .' : '. $outputlangs->convToOutputCharset($account->domiciliation) . "<br>";
+						$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('Address') .' : '. $outputlangs->convToOutputCharset(nl2br($account->domiciliation)) . "<br>";
 					}
 					if (!empty($account->proprio)) {
 						$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('BankAccountOwner') .' : '. $outputlangs->convToOutputCharset($account->proprio) . "<br>";
