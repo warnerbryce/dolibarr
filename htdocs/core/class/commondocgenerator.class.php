@@ -144,10 +144,10 @@ abstract class CommonDocGenerator
 
 		if (empty($conf->user->dir_output.'/'.get_exdir($user->id, 2, 0, 1, $user, 'user').'/'.$user->photo)) {
 			$logotouse = '';
-		} else {			
+		} else {
 			$logotouse = $conf->user->dir_output.'/'.get_exdir($user->id, 2, 0, 1, $user, 'user').'/'.$user->photo;
 		}
-		
+
 		$array_user = array(
 			'myuser_lastname'=>$user->lastname,
 			'myuser_firstname'=>$user->firstname,
@@ -249,8 +249,8 @@ abstract class CommonDocGenerator
 			$mysoc->state = getState($mysoc->state_code, 0);
 		}
 
-		if(empty($conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small)) {
-			$logotouse = ''; 
+		if (empty($conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small)) {
+			$logotouse = '';
 		} else {
 			$logotouse = $conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small;
 		}
@@ -552,7 +552,7 @@ abstract class CommonDocGenerator
 			$array_key.'_multicurrency_total_tva_locale' => price($object->multicurrency_total_tva, 0, $outputlangs),
 			$array_key.'_multicurrency_total_ttc_locale' => price($object->multicurrency_total_ttc, 0, $outputlangs),
 			$array_key.'_amount_in_currency'=>$outputlangs->transnoentities("AmountInCurrency", $outputlangs->transnoentitiesnoconv("Currency".$conf->currency)),
-			
+
 			$array_key.'_note_private'=>$object->note,
 			$array_key.'_note_public'=>$object->note_public,
 			$array_key.'_note'=>$object->note_public, // For backward compatibility
@@ -582,7 +582,7 @@ abstract class CommonDocGenerator
 		}
 
 		// Print Payment infos for Transfer or Check
- 		if ($object->element == 'facture' || $object->element == 'propal') {
+		if ($object->element == 'facture' || $object->element == 'propal') {
 			$resarray[$array_key.'_payment_info'] = '';
 			if ($object->mode_reglement_code == 'CHQ') {
 				if (getDolGlobalInt('FACTURE_CHQ_NUMBER')) {
@@ -590,7 +590,7 @@ abstract class CommonDocGenerator
 						$account = new Account($this->db);
 						$account->fetch(getDolGlobalInt('FACTURE_CHQ_NUMBER'));
 
-						$resarray[$array_key.'_payment_info'] ='<strong>' . $outputlangs->transnoentities('PaymentByChequeOrderedTo', $account->proprio) . '</strong>';					
+						$resarray[$array_key.'_payment_info'] ='<strong>' . $outputlangs->transnoentities('PaymentByChequeOrderedTo', $account->proprio) . '</strong>';
 						if (!getDolGlobalInt('MAIN_PDF_HIDE_CHQ_ADDRESS')) {
 							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($account->owner_address);
 							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($account->owner_zip);
@@ -602,10 +602,11 @@ abstract class CommonDocGenerator
 						$resarray[$array_key.'_payment_info'] = $outputlangs->transnoentities('PaymentByChequeOrderedTo', $this->emetteur->name);
 						if (!getDolGlobalInt('MAIN_PDF_HIDE_CHQ_ADDRESS')) {
 							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($this->emetteur->getFullAddress());
-						} 
+						}
 					}
 				}
 			}
+
 			if (empty($object->mode_reglement_code) || $object->mode_reglement_code == 'VIR') {
 				if (getDolGlobalInt('FACTURE_RIB_NUMBER')) {
 					$bankid = ($object->fk_account <= 0 ? $conf->global->FACTURE_RIB_NUMBER : $object->fk_account);
