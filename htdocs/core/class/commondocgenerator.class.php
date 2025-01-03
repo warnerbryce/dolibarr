@@ -580,7 +580,72 @@ abstract class CommonDocGenerator
 			$resarray[$array_key.'_total_discount_ht_locale'] = '';
 			$resarray[$array_key.'_total_discount_ht'] = '';
 		}
+		// Print Payment infos for Transfer or Check
+ 		if ($object->element == 'facture' || $object->element == 'propal') {
+			if ($object->mode_reglement_code == 'CHQ') {
+				if (getDolGlobalInt('FACTURE_CHQ_NUMBER')) {
+					if ($conf->global->FACTURE_CHQ_NUMBER > 0) {
+						$account = new Account($this->db);
+						$account->fetch(getDolGlobalInt('FACTURE_CHQ_NUMBER'));
 
+						$resarray[$array_key.'_payment_info'] ='<strong>' . $outputlangs->transnoentities('PaymentByChequeOrderedTo', $account->proprio) . '</strong>';					
+						if (!getDolGlobalInt('MAIN_PDF_HIDE_CHQ_ADDRESS')) {
+							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($account->owner_address);
+							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($account->owner_zip);
+							$resarray[$array_key.'_payment_info'] .= " " . $outputlangs->convToOutputCharset($account->owner_town);
+							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($account->country);
+						}
+					}
+					if (getDolGlobalInt('FACTURE_CHQ_NUMBER') == -1) {
+						$resarray[$array_key.'_payment_info'] = $outputlangs->transnoentities('PaymentByChequeOrderedTo', $this->emetteur->name);
+						if (!getDolGlobalInt('MAIN_PDF_HIDE_CHQ_ADDRESS')) {
+							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($this->emetteur->getFullAddress());
+						} 
+					}
+				}
+			}
+			if (empty($object->mode_reglement_code) || $object->mode_reglement_code == 'VIR') {
+				if (getDolGlobalInt('FACTURE_RIB_NUMBER')) {
+					$bankid = ($object->fk_account <= 0 ? $conf->global->FACTURE_RIB_NUMBER : $object->fk_account);
+					if ($object->fk_bank > 0) {
+						$bankid = $object->fk_bank; // For backward compatibility when object->fk_account is forced with object->fk_bank
+					}
+					$account = new Account($this->db);
+					$account->fetch($bankid);
+
+					$resarray[$array_key.'_payment_info'] = $outputlangs->transnoentities('PaymentByTransferOnThisBankAccount')." : <br>";
+					$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('Bank') . " : " . $outputlangs->convToOutputCharset($account->bank) . "<br>";
+
+					if (empty(getDolGlobalInt('PDF_BANK_HIDE_NUMBER_SHOW_ONLY_BICIBAN'))) {
+						if (!empty($account->code_banque)) {
+							$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('BankCode') .' : '. $outputlangs->convToOutputCharset($account->code_banque) . "<br>";
+						}
+						if (!empty($account->code_guichet)) {
+							$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('DeskCode') .' : '. $outputlangs->convToOutputCharset($account->code_guichet) . "<br>";
+						}
+						if (!empty($account->number)) {
+							$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('BankAccountNumber') .' : '. $outputlangs->convToOutputCharset($account->number) . "<br>";
+						}
+						if (!empty($account->cle_rib)) {
+							$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('BankAccountNumberKey') .' : '. $outputlangs->convToOutputCharset($account->cle_rib) . "<br>";
+						}
+					}
+					if (!empty($account->domiciliation)) {
+						$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('Address') .' : '. $outputlangs->convToOutputCharset($account->domiciliation) . "<br>";
+					}
+					if (!empty($account->proprio)) {
+						$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('BankAccountOwner') .' : '. $outputlangs->convToOutputCharset($account->proprio) . "<br>";
+					}
+					if (!empty($account->iban)) {
+						$resarray[$array_key.'_payment_info'] .= "<b>" . $outputlangs->transnoentities('IBAN') ." : ". $outputlangs->convToOutputCharset($account->iban) . '</b><br>';
+					}
+					if (!empty($account->bic)) {
+						$resarray[$array_key.'_payment_info'] .= "<strong>" . $outputlangs->transnoentities('BIC') .' : '. $outputlangs->convToOutputCharset($account->bic) . "</strong><br>";
+						// I alternarte between <strong> and <b> because getting twice the same tag in the same key get substitued wrong
+					}
+				}
+			}
+		}
 		// Fetch project information if there is a project assigned to this object
 		if ($object->element != "project" && !empty($object->fk_project) && $object->fk_project > 0) {
 			if (!is_object($object->project)) {

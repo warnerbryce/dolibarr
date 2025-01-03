@@ -271,7 +271,7 @@ class doc_generic_proposal_odt extends ModelePDFPropales
 		$outputlangs->charset_output = 'UTF-8';
 
 		// Load translation files required by the page
-		$outputlangs->loadLangs(array("main", "dict", "companies", "bills"));
+		$outputlangs->loadLangs(array("main", "dict", "companies", "bills", "banks"));
 
 		if ($conf->propal->multidir_output[$conf->entity]) {
 			// If $object is id instead of object
