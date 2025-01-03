@@ -3080,9 +3080,9 @@ abstract class CommonObject
 				while ($i < $num) {
 					$row = $this->db->fetch_row($resql);
 					$rows[] = $row[0]; // Add parent line into array rows
-					$childrens = $this->getChildrenOfLine($row[0], $grandchild);
-					if (!empty($childrens)) {
-						foreach ($childrens as $child) {
+					$children = $this->getChildrenOfLine($row[0], $grandchild);
+					if (!empty($children)) {
+						foreach ($children as $child) {
 							array_push($rows, $child);
 						}
 					}

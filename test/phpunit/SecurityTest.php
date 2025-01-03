@@ -584,7 +584,7 @@ class SecurityTest extends PHPUnit\Framework\TestCase
 		$this->assertEquals('<a href="&lpar;alert(document.cookie)&rpar;">XSS</a>', $result, 'Test 19');
 
 
-		// Test with restricthtml + MAIN_RESTRICTHTML_ONLY_VALID_HTML only to test disabling of bad atrributes
+		// Test with restricthtml + MAIN_RESTRICTHTML_ONLY_VALID_HTML only to test disabling of bad attributes
 
 		$conf->global->MAIN_RESTRICTHTML_ONLY_VALID_HTML = 1;
 		$conf->global->MAIN_RESTRICTHTML_ONLY_VALID_HTML_TIDY = 0;
@@ -609,7 +609,7 @@ class SecurityTest extends PHPUnit\Framework\TestCase
 		$this->assertEquals('"c:\this is a path~1\aaan 110;" abcdef', $result);
 
 
-		// Test with restricthtml + MAIN_RESTRICTHTML_ONLY_VALID_HTML_TIDY only to test disabling of bad atrributes
+		// Test with restricthtml + MAIN_RESTRICTHTML_ONLY_VALID_HTML_TIDY only to test disabling of bad attributes
 
 		if (extension_loaded('tidy') && class_exists("tidy")) {
 			$conf->global->MAIN_RESTRICTHTML_ONLY_VALID_HTML = 0;
@@ -633,7 +633,7 @@ class SecurityTest extends PHPUnit\Framework\TestCase
 		}
 
 
-		// Test with restricthtml + MAIN_RESTRICTHTML_ONLY_VALID_HTML + MAIN_RESTRICTHTML_ONLY_VALID_HTML_TIDY to test disabling of bad atrributes
+		// Test with restricthtml + MAIN_RESTRICTHTML_ONLY_VALID_HTML + MAIN_RESTRICTHTML_ONLY_VALID_HTML_TIDY to test disabling of bad attributes
 
 		if (extension_loaded('tidy') && class_exists("tidy")) {
 			$conf->global->MAIN_RESTRICTHTML_ONLY_VALID_HTML = 1;
@@ -657,7 +657,7 @@ class SecurityTest extends PHPUnit\Framework\TestCase
 		}
 
 
-		// Test with restricthtml + MAIN_RESTRICTHTML_REMOVE_ALSO_BAD_ATTRIBUTES to test disabling of bad atrributes
+		// Test with restricthtml + MAIN_RESTRICTHTML_REMOVE_ALSO_BAD_ATTRIBUTES to test disabling of bad attributes
 
 		unset($conf->global->MAIN_RESTRICTHTML_ONLY_VALID_HTML);
 		unset($conf->global->MAIN_RESTRICTHTML_ONLY_VALID_HTML_TIDY);
@@ -1152,7 +1152,7 @@ class SecurityTest extends PHPUnit\Framework\TestCase
 
 
 
-		// For a string that is already HTML (contains HTML tags) with special tags but badly formated
+		// For a string that is already HTML (contains HTML tags) with special tags but badly formatted
 		$stringtotest = "&quot;&gt;";
 		$stringfixed = "&quot;&gt;";
 		//$result = dol_htmlentitiesbr($stringtotest);
@@ -1164,7 +1164,7 @@ class SecurityTest extends PHPUnit\Framework\TestCase
 		$this->assertEquals($stringfixed, $result, 'Error');    // Expected '' because should failed because login 'auto' does not exists
 
 
-		// For a string that is already HTML (contains HTML tags) with special tags but badly formated
+		// For a string that is already HTML (contains HTML tags) with special tags but badly formatted
 		$stringtotest = "testA\n<h1>hhhh</h1><z>ddd</z><header>aaa</header><footer>bbb</footer>";
 		if (getDolGlobalString("MAIN_RESTRICTHTML_ONLY_VALID_HTML_TIDY")) {
 			$stringfixed = "testA\n<h1>hhhh</h1>\nddd\n<header>aaa</header>\n<footer>bbb</footer>";
@@ -1180,7 +1180,7 @@ class SecurityTest extends PHPUnit\Framework\TestCase
 		$this->assertEquals($stringfixed, $result, 'Error');    // Expected '' because should failed because login 'auto' does not exists
 
 
-		// For a string that is already HTML (contains HTML tags) but badly formated
+		// For a string that is already HTML (contains HTML tags) but badly formatted
 		$stringtotest = "testB\n<h1>hhh</h1>\n<td>td alone</td><h1>iii</h1>";
 		if (getDolGlobalString("MAIN_RESTRICTHTML_ONLY_VALID_HTML_TIDY")) {
 			$stringfixed = "testB\n<h1>hhh</h1>\n<h1>iii</h1>\n<table>\n<tr>\n<td>td alone</td>\n</tr>\n</table>";

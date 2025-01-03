@@ -244,7 +244,7 @@ FIX: warning php8.2 undefined_array_key (#26830)
 For users:
 ----------
 NEW: Compatibility with PHP 8.2
-NEW: Module for Advanced stock transfert is now stable (#26594)
+NEW: Module for Advanced stock transfer is now stable (#26594)
 NEW: Module Workstation (used to enhance the module BOM and Manufacturing Order) is now stable
 NEW: Add a confirmation popup when deleting extrafields
 NEW: Add type 'icon' type for extrafields
@@ -289,7 +289,7 @@ NEW: Add index on prelevement_demande
 NEW: Add invoice subtype in customer invoice (#26543) and template invoice (SQL part) (#26535)
 NEW: Add label to price level when changing price (#26240)
 NEW: Add modifications of template invoices into agenda
-NEW: Add more company informations (ProfId7 to 10) (#25266)
+NEW: Add more company information (ProfId7 to 10) (#25266)
 NEW: Add more information to holiday mailings (#25461)
 NEW: Add more param on fetch() to prepare perf optimization
 NEW: Add more tables activated by module activation only
@@ -365,7 +365,7 @@ NEW: Library including math and financial functions (#25035)
 NEW: Loan - Can upload a file with drag and drop
 NEW: Manage rate indirect. (#26449)
 NEW: memorize model name for pdf hooks
-NEW: Menu editor is reponsive
+NEW: Menu editor is responsive
 NEW: Merge the "Create ..." buttons on contract into one.
 NEW: More accurate tooltip on what admin permissions are
 NEW: (#24834) new option for hide the footer (#25464)
@@ -406,7 +406,7 @@ NEW: Upgrade in module builder in menu section
 NEW: use account address in sepa mandate (#23642)
 NEW: VAT rate - Add entity
 NEW: webportal site account
-NEW: When an user unset the batch management of products, transformation of each batch stock mouvement in global stock mouvement
+NEW: When an user unset the batch management of products, transformation of each batch stock movement in global stock movement
 
 SEC: #25512 applicative anti bruteforce - security on too many login attempts (#25520)
 SEC: Add action confirm_... as sensitive to need a CSRF token
@@ -462,7 +462,7 @@ NEW: ModuleBuilder: edit properties in description tab for ModuleBuilder
 NEW: ModuleBuilder: remove dictionary in ModuleBuilder
 NEW: ModuleBuilder: add page for create dictionary
 NEW: ModuleBuilder: add badge for each tabs
-NEW: ModuleBuilder: for edit name of dictionnary and delete it in MB
+NEW: ModuleBuilder: for edit name of dictionary and delete it in MB
 NEW: add barcode function to check if EAN13 is valid (
 
 WARNING:

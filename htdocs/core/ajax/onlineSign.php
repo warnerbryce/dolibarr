@@ -163,7 +163,7 @@ if ($action == "importSignature") {
 							//$pdf->Open();
 							$pagecount = $pdf->setSourceFile($sourcefile);		// original PDF
 
-							$s = array(); 	// Array with size of each page. Exemple array(w'=>210, 'h'=>297);
+							$s = array(); 	// Array with size of each page. Example array(w'=>210, 'h'=>297);
 							for ($i=1; $i<($pagecount+1); $i++) {
 								try {
 									$tppl = $pdf->importPage($i);
@@ -324,7 +324,7 @@ if ($action == "importSignature") {
 
 							//$pdf->Open();
 							$pagecount = $pdf->setSourceFile($sourcefile);		// original PDF
-							$s = array(); 	// Array with size of each page. Exemple array(w'=>210, 'h'=>297);
+							$s = array(); 	// Array with size of each page. Example array(w'=>210, 'h'=>297);
 							for ($i=1; $i<($pagecount+1); $i++) {
 								try {
 									$tppl = $pdf->importPage($i);
@@ -425,7 +425,7 @@ if ($action == "importSignature") {
 
 							//$pdf->Open();
 							$pagecount = $pdf->setSourceFile($sourcefile);		// original PDF
-							$s = array(); 	// Array with size of each page. Exemple array(w'=>210, 'h'=>297);
+							$s = array(); 	// Array with size of each page. Example array(w'=>210, 'h'=>297);
 							for ($i=1; $i<($pagecount+1); $i++) {
 								try {
 									$tppl = $pdf->importPage($i);
