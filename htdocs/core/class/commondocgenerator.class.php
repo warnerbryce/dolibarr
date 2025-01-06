@@ -142,12 +142,8 @@ abstract class CommonDocGenerator
 		// phpcs:enable
 		global $conf, $extrafields;
 
-		if (empty($conf->user->dir_output.'/'.get_exdir($user->id, 2, 0, 1, $user, 'user').'/'.$user->photo)) {
-			$logotouse = '';
-		} else {			
-			$logotouse = $conf->user->dir_output.'/'.get_exdir($user->id, 2, 0, 1, $user, 'user').'/'.$user->photo;
-		}
-		
+		$logotouse = $conf->user->dir_output.'/'.get_exdir($user->id, 2, 0, 1, $user, 'user').'/'.$user->photo;
+
 		$array_user = array(
 			'myuser_lastname'=>$user->lastname,
 			'myuser_firstname'=>$user->firstname,
@@ -249,12 +245,18 @@ abstract class CommonDocGenerator
 			$mysoc->state = getState($mysoc->state_code, 0);
 		}
 
-		if(empty($conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small)) {
-			$logotouse = ''; 
-		} else {
-			$logotouse = $conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small;
-		}
+		$logotouse = $conf->mycompany->dir_output.'/logos/thumbs/'.$mysoc->logo_small;
 
+		// Capital formatted for ODT
+		if (!empty($mysoc->capital)) {
+			$capital_formatted = '';
+			$tmpamounttoshow = price2num($mysoc->capital); // This field is a free string or a float
+			if (is_numeric($tmpamounttoshow) && $tmpamounttoshow > 0) {
+				$capital_formatted = $outputlangs->transnoentities("CapitalOf", price($tmpamounttoshow, 0, $outputlangs, 0, 0, 0, $conf->currency));
+			} else {
+				$capital_formatted = $outputlangs->transnoentities("CapitalOf", $mysoc->capital, $outputlangs);
+			}
+		}
 		return array(
 			'mycompany_logo'=>$logotouse,
 			'mycompany_name'=>$mysoc->name,
@@ -272,6 +274,7 @@ abstract class CommonDocGenerator
 			'mycompany_juridicalstatus'=>$mysoc->forme_juridique,
 			'mycompany_managers'=>$mysoc->managers,
 			'mycompany_capital'=>$mysoc->capital,
+			'mycompany_capital_formatted'=>$capital_formatted,
 			'mycompany_barcode'=>$mysoc->barcode,
 			'mycompany_idprof1'=>$mysoc->idprof1,
 			'mycompany_idprof2'=>$mysoc->idprof2,
@@ -551,8 +554,7 @@ abstract class CommonDocGenerator
 			$array_key.'_multicurrency_total_ht_locale' => price($object->multicurrency_total_ht, 0, $outputlangs),
 			$array_key.'_multicurrency_total_tva_locale' => price($object->multicurrency_total_tva, 0, $outputlangs),
 			$array_key.'_multicurrency_total_ttc_locale' => price($object->multicurrency_total_ttc, 0, $outputlangs),
-			$array_key.'_amount_in_currency'=>$outputlangs->transnoentities("AmountInCurrency", $outputlangs->transnoentitiesnoconv("Currency".$conf->currency)),
-			
+
 			$array_key.'_note_private'=>$object->note,
 			$array_key.'_note_public'=>$object->note_public,
 			$array_key.'_note'=>$object->note_public, // For backward compatibility
@@ -580,72 +582,7 @@ abstract class CommonDocGenerator
 			$resarray[$array_key.'_total_discount_ht_locale'] = '';
 			$resarray[$array_key.'_total_discount_ht'] = '';
 		}
-		// Print Payment infos for Transfer or Check
- 		if ($object->element == 'facture' || $object->element == 'propal') {
-			if ($object->mode_reglement_code == 'CHQ') {
-				if (getDolGlobalInt('FACTURE_CHQ_NUMBER')) {
-					if ($conf->global->FACTURE_CHQ_NUMBER > 0) {
-						$account = new Account($this->db);
-						$account->fetch(getDolGlobalInt('FACTURE_CHQ_NUMBER'));
 
-						$resarray[$array_key.'_payment_info'] ='<strong>' . $outputlangs->transnoentities('PaymentByChequeOrderedTo', $account->proprio) . '</strong>';					
-						if (!getDolGlobalInt('MAIN_PDF_HIDE_CHQ_ADDRESS')) {
-							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($account->owner_address);
-							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($account->owner_zip);
-							$resarray[$array_key.'_payment_info'] .= " " . $outputlangs->convToOutputCharset($account->owner_town);
-							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($account->country);
-						}
-					}
-					if (getDolGlobalInt('FACTURE_CHQ_NUMBER') == -1) {
-						$resarray[$array_key.'_payment_info'] = $outputlangs->transnoentities('PaymentByChequeOrderedTo', $this->emetteur->name);
-						if (!getDolGlobalInt('MAIN_PDF_HIDE_CHQ_ADDRESS')) {
-							$resarray[$array_key.'_payment_info'] .= "<br>" . $outputlangs->convToOutputCharset($this->emetteur->getFullAddress());
-						} 
-					}
-				}
-			}
-			if (empty($object->mode_reglement_code) || $object->mode_reglement_code == 'VIR') {
-				if (getDolGlobalInt('FACTURE_RIB_NUMBER')) {
-					$bankid = ($object->fk_account <= 0 ? $conf->global->FACTURE_RIB_NUMBER : $object->fk_account);
-					if ($object->fk_bank > 0) {
-						$bankid = $object->fk_bank; // For backward compatibility when object->fk_account is forced with object->fk_bank
-					}
-					$account = new Account($this->db);
-					$account->fetch($bankid);
-
-					$resarray[$array_key.'_payment_info'] = $outputlangs->transnoentities('PaymentByTransferOnThisBankAccount')." : <br>";
-					$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('Bank') . " : " . $outputlangs->convToOutputCharset($account->bank) . "<br>";
-
-					if (empty(getDolGlobalInt('PDF_BANK_HIDE_NUMBER_SHOW_ONLY_BICIBAN'))) {
-						if (!empty($account->code_banque)) {
-							$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('BankCode') .' : '. $outputlangs->convToOutputCharset($account->code_banque) . "<br>";
-						}
-						if (!empty($account->code_guichet)) {
-							$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('DeskCode') .' : '. $outputlangs->convToOutputCharset($account->code_guichet) . "<br>";
-						}
-						if (!empty($account->number)) {
-							$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('BankAccountNumber') .' : '. $outputlangs->convToOutputCharset($account->number) . "<br>";
-						}
-						if (!empty($account->cle_rib)) {
-							$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('BankAccountNumberKey') .' : '. $outputlangs->convToOutputCharset($account->cle_rib) . "<br>";
-						}
-					}
-					if (!empty($account->domiciliation)) {
-						$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('Address') .' : '. $outputlangs->convToOutputCharset($account->domiciliation) . "<br>";
-					}
-					if (!empty($account->proprio)) {
-						$resarray[$array_key.'_payment_info'] .= $outputlangs->transnoentities('BankAccountOwner') .' : '. $outputlangs->convToOutputCharset($account->proprio) . "<br>";
-					}
-					if (!empty($account->iban)) {
-						$resarray[$array_key.'_payment_info'] .= "<b>" . $outputlangs->transnoentities('IBAN') ." : ". $outputlangs->convToOutputCharset($account->iban) . '</b><br>';
-					}
-					if (!empty($account->bic)) {
-						$resarray[$array_key.'_payment_info'] .= "<strong>" . $outputlangs->transnoentities('BIC') .' : '. $outputlangs->convToOutputCharset($account->bic) . "</strong><br>";
-						// I alternarte between <strong> and <b> because getting twice the same tag in the same key get substitued wrong
-					}
-				}
-			}
-		}
 		// Fetch project information if there is a project assigned to this object
 		if ($object->element != "project" && !empty($object->fk_project) && $object->fk_project > 0) {
 			if (!is_object($object->project)) {
@@ -887,42 +824,6 @@ abstract class CommonDocGenerator
 			$array_key.'_size'=>$calculatedVolume.' '.measuringUnitString(0, 'volume'),
 		);
 
-		// Load dim data
-		$tmparray = $object->getTotalWeightVolume();
-		$totalWeight = $tmparray['weight'];
-		$totalVolume = $tmparray['volume'];
-		$totalOrdered = $tmparray['ordered'];
-		$totalToShip = $tmparray['toship'];
-
-		// Set trueVolume and volume_units not currently stored into database
-		if ($object->trueWidth && $object->trueHeight && $object->trueDepth) {
-			$object->trueVolume = $object->trueWidth * $object->trueHeight * $object->trueDepth;
-			$object->volume_units = $object->size_units * 3;
-		}
-
-		$array_shipment[$array_key.'_total_ordered'] = (string) $totalOrdered;
-		$array_shipment[$array_key.'_total_toship'] = (string) $totalToShip;
-
-		if ($object->trueWeight) {
-			$array_shipment[$array_key.'_total_weight'] = (empty($totalWeight)) ? '' : showDimensionInBestUnit($object->trueWeight, $object->weight_units, "weight", $outputlangs);
-		} elseif (!empty($totalWeight)) {
-			$array_shipment[$array_key.'_total_weight'] = (empty($totalWeight)) ? '' : showDimensionInBestUnit($totalWeight, 0, "weight", $outputlangs, -1, 'no', 1);
-		} else {
-			$array_shipment[$array_key.'_total_weight'] = "";
-		}
-
-		if (!empty($object->trueVolume)) {
-			if ($object->volume_units < 50) {
-				$array_shipment[$array_key.'_total_volume'] = (empty($totalVolume)) ? '' : showDimensionInBestUnit($object->trueVolume, $object->volume_units, "volume", $outputlangs);
-			} else {
-				$array_shipment[$array_key.'_total_volume'] = (empty($totalVolume)) ? '' :  price($object->trueVolume, 0, $outputlangs, 0, 0).' '.measuringUnitString(0, "volume", $object->volume_units);
-			}
-		} elseif (!empty($totalVolume)) {
-			$array_shipment[$array_key.'_total_volume'] = (empty($totalVolume)) ? '' : showDimensionInBestUnit($totalVolume, 0, "volume", $outputlangs, -1, 'no', 1);
-		} else {
-			$array_shipment[$array_key.'_total_volume'] = "";
-		}
-
 		// Add vat by rates
 		foreach ($object->lines as $line) {
 			if (empty($array_shipment[$array_key.'_total_vat_'.$line->tva_tx])) {
@@ -982,6 +883,7 @@ abstract class CommonDocGenerator
 			'line_surface'=>empty($line->surface) ? '' : $line->surface * $line->qty_shipped.' '.measuringUnitString(0, 'surface', $line->surface_units),
 			'line_volume'=>empty($line->volume) ? '' : $line->volume * $line->qty_shipped.' '.measuringUnitString(0, 'volume', $line->volume_units),
 		);
+
 		// Retrieve extrafields
 		$extrafieldkey = $line->element;
 		$array_key = "line";
